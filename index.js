@@ -33,7 +33,7 @@ function hyperappJSX(options) {
     transform: (code, id) => {
       if (!filter(id)) return
       if (!jsxFilter(id)) return
-      return `import {jsxNode, jsxFragment} from '${PKGNAME}/jsx.js'
+      return `import {jsx, jsxFragment} from '${PKGNAME}/jsx.js'
 ${transformSync(code, { plugins: [babelPluginJSX] }).code}`
     },
   }
