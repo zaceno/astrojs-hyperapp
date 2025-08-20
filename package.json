@@ -1,15 +1,47 @@
 {
-  "name": "@zxlabs/astrojs-hyperapp",
-  "version": "2.0.1",
+  "name": "astrojs-hyperapp",
+  "version": "3.0.1",
   "type": "module",
   "description": "Hyperapp integration for astro.build",
-  "main": "index.js",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "*.js",
+    "*.d.ts"
+  ],
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "default": "./index.js"
+    },
+    "./jsx": {
+      "types": "./jsx.d.ts",
+      "import": "./jsx.js",
+      "default": "./jsx.js"
+    },
+    "./jsx.js": {
+      "types": "./jsx.d.ts",
+      "import": "./jsx.js",
+      "default": "./jsx.js"
+    },
+    "./client-renderer.js": {
+      "import": "./client-renderer.js",
+      "default": "./client-renderer.js"
+    },
+    "./server-renderer.js": {
+      "import": "./server-renderer.js",
+      "default": "./server-renderer.js"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zaceno/zx-astrojs-hyperapp.git"
+    "url": "git+https://github.com/zaceno/astrojs-hyperapp.git"
   },
   "keywords": [
     "astro",
@@ -18,14 +50,18 @@
   "author": "Zacharias Enochsson",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/zaceno/zx-astrojs-hyperapp/issues"
+    "url": "https://github.com/zaceno/astrojs-hyperapp/issues"
   },
-  "homepage": "https://github.com/zaceno/zx-astrojs-hyperapp#readme",
+  "homepage": "https://github.com/zaceno/astrojs-hyperapp#readme",
   "dependencies": {
     "@babel/core": "^7.23.2",
     "@babel/plugin-transform-react-jsx": "^7.22.15",
+    "@rollup/pluginutils": "^5.2.0",
     "hyperapp": "^2.0.22",
-    "jsdom": "^22.1.0",
-    "vite": "^4.5.0"
+    "jsdom": "^22.1.0"
+  },
+  "peerDependencies": {
+    "vite": "^6.3.4",
+    "astro": "^5.13.2"
   }
 }

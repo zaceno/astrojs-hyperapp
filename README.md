@@ -1,8 +1,8 @@
 # Hyperapp Integration for Astro
 
-Allows you to add client-side-interactive islands in your astro apps using hyperapp, with jsx if you want it.
+Allows you to add client-side-interactive islands in your astro apps using hyperapp, with jsx/tsx if you want it.
 
-> Does not yet support HMR and TS/TSX
+**Update:** Now supports typescript/TSX, and HMR (hot module reloading) - the ability to reload your components mid-flight when you save them, without losing current state.
 
 Demo: https://stackblitz.com/github/zaceno/astrojs-hyperapp-demo
 
@@ -11,19 +11,25 @@ Demo: https://stackblitz.com/github/zaceno/astrojs-hyperapp-demo
 In your astro project:
 
 ```sh
-> npm install @zxlabs/astrojs-hyperapp
+> npm install astrojs-hyperapp
 ```
 
 In your `astro.config.mjs`:
 
 ```js
 import { defineConfig } from "astro/config"
-import hyperapp from "@zxlabs/astrojs-hyperapp"
+import hyperapp from "astrojs-hyperapp"
 
 export default defineConfig({
   integrations: [hyperapp()],
 })
 ```
+## Using JSX / TSX
+
+Just name your files with a '.jsx' or '.tsx' extension, and you're good to start using JSX in your components. 
+
+Fragments `<>...</>` work too, but bear in mind that the main view component of a hyperapp app, or an island,
+cannot be a fragment - it must return a single element.
 
 ### Note on mixing with other ui frameworks
 
@@ -36,7 +42,7 @@ separate components from different frameworks
 
 ```js
 import { defineConfig } from "astro/config"
-import hyperapp from "@zxlabs/astrojs-hyperapp"
+import hyperapp from "astrojs-hyperapp"
 import preact from "@astrojs/preact"
 
 export default defineConfig({
@@ -46,6 +52,28 @@ export default defineConfig({
   ],
 })
 ```
+
+## Using Typescript/TSX
+
+Any files ending with .ts or .tsx will be processed as typescript files.
+
+In order for typescript to understand your .tsx files properly, you need to add:
+
+```js
+  "jsx": "preserve",
+  "jsxFactory": "jsx",
+  "jsxFragmentFactory": "jsxFragment"
+```
+
+to the `"compilerOptions": {...}` in your `tsconfig.json`
+
+Also, you will need to provide the jsx types to typescript by adding:
+
+```js
+/// <reference types="astrojs-hyperapp/jsx" />
+```
+
+in the `src/env.d.ts` file. If you don't already have `src/env.d.ts` file, please create one. This is the best-practice place to add types to the global environment for your source code.
 
 ## Authoring islands
 
@@ -206,7 +234,7 @@ will be shared.
 **_`island1.jsx`_**
 
 ```js
-import syncedIslands from '@zxlabs/astrojs-hyperapp/synced-islands'
+import syncedIslands from 'astrojs-hyperapp/synced-islands'
 
 //define a syncer for islands 1 and 2
 export const sync = syncedIslands({
