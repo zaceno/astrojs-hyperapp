@@ -28,6 +28,10 @@ export default defineConfig({
 
 Just name your files with a '.jsx' or '.tsx' extension, and you're good to start using JSX in your components. 
 
+We use the "classic" transform mode for JSX, meaning that children of your components will be passed as an array in the second argument of your components. *Not* as a `children` property in the first argument.
+
+Unlike e.g. React, `key` properties are not handled intrinsically. They can only be set on regular html/svg nodes - not on components. Your components can *accept* keys as properties of course, and set the key on the html/svg node that it returns.
+
 Fragments `<>...</>` work too, but bear in mind that the main view component of a hyperapp app, or an island,
 cannot be a fragment - it must return a single element.
 
