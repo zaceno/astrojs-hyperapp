@@ -130,6 +130,11 @@ import Counter from '../components/counter.jsx'
 Note how the props passed in to the island in the astro-component,
 are available in the `serverProps` we defined in the counter.
 
+### Note: ###
+
+Currently there is a limitation with Astro, so that if you are using other UI frameworks alongside Hyperapp, that also work with .jsx files, you cannot use the `client:only` hydration directive. `client:only="hyperapp"` will give you an error saying you are missing a renderer hint. This is becase "hyperapp" is not in a particular internal hardcoded list of renderers. 
+
+
 ## Passing static content to islands
 
 You can pass static content from astro components in to your islands,
