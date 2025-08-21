@@ -5,7 +5,7 @@ type ViewProp<S> = App<S>["view"]
 type SubscriptionsProp<S> = App<S>["subscriptions"]
 type DispatchProp<S> = App<S>["dispatch"]
 
-type Synchronizer<S> = (view: ViewProp<S>) => {
+type Synchronizer = <S>(view: ViewProp<S>) => {
   init: InitProp<S>
   subscriptions?: SubscriptionsProp<S>
   view: ViewProp<S>
