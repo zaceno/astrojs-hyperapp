@@ -1,6 +1,6 @@
 {
   "name": "astrojs-hyperapp",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "type": "module",
   "description": "Hyperapp integration for astro.build",
   "main": "./index.js",
