@@ -26,6 +26,16 @@
       "import": "./jsx.js",
       "default": "./jsx.js"
     },
+    "./synced-islands": {
+      "types": "./synced-islands.d.ts",
+      "import": "./synced-islands.js",
+      "default": "./synced-islands.js"
+    },
+    "./synced-islands.js": {
+      "types": "./synced-islands.d.ts",
+      "import": "./synced-islands.js",
+      "default": "./synced-islands.js"
+    },
     "./client-renderer.js": {
       "import": "./client-renderer.js",
       "default": "./client-renderer.js"
@@ -56,12 +66,13 @@
   "dependencies": {
     "@babel/core": "^7.23.2",
     "@babel/plugin-transform-react-jsx": "^7.22.15",
+    "@babel/preset-typescript": "^7.27.1",
     "@rollup/pluginutils": "^5.2.0",
     "hyperapp": "^2.0.22",
     "jsdom": "^22.1.0"
   },
   "peerDependencies": {
-    "vite": "^6.3.4",
-    "astro": "^5.13.2"
+    "astro": "^5.13.2",
+    "vite": "^6.3.4"
   }
 }

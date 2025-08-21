@@ -1,20 +1,34 @@
-# Hyperapp Integration for Astro
+# Astro-Hyperapp Integration
 
-Allows you to add client-side-interactive islands in your astro apps using hyperapp, with jsx/tsx if you want it.
+> Static/server rendered Hyperapp components with Astro. JSX/TSX-support, Hot-Module-Reloading, Server-Side-Rendering & Synchronized Components
 
-**Update:** Now supports typescript/TSX, and HMR (hot module reloading) - the ability to reload your components mid-flight when you save them, without losing current state.
+[Astro](https://astro.build) is a static-site-generator – it lets you generate a websitesite as static html-, css- and js-files from various content-sources. It can also run as a server, rendering your where your html/css at runtime. Unlike similar tools, Astro is agnostic about what client-framework you use. You can use whatever framework you like (or none!) on the client-side, by way of *integrations*.
 
-Demo: https://stackblitz.com/github/zaceno/astrojs-hyperapp-demo
+[Hyperapp](https://github.com/jorgebucaran/hyperapp) is an extremely *tiny*, *fast* and *simple* client-side UI framework. With this integration, you get to use Hyperapp in your Astro site, along with:
 
-## Installation:
+- **JSX/TSX support** – The lingua franca for writing view components 
+- **Server-Side-Rendering** – Even before your component is mounted, the initial view is pre-rendered in the html. This makes your pages *feel* faster, and prevents jarring layout shifts.
+- **Hot-Module-Reloading** – While developing, see the changes to your components reflected live on save - *without losing their internal state*
+- **Synchronized Components** – Have multiple, separate Hyperapp components spread out over your otherwise static site – *sharing the same state*, thanks to the `synchronized-islands` utility provided by this integration.
 
-In your astro project:
+Have a look at a demo at https://stackblitz.com/github/zaceno/astrojs-hyperapp-demo, or read on to try for yourself
+
+* auto-gen TOC:
+{:toc}
+
+## Get Started
+
+If you don't already have an astro project, set one up following the instructions at: https://docs.astro.build/en/install-and-setup/
+
+### Install and enable `astrojs-hyperapp`
+
+Open a shell and change directory to the root of your astro project, then run:
 
 ```sh
-> npm install astrojs-hyperapp
+> npm install hyperapp astrojs-hyperapp
 ```
 
-In your `astro.config.mjs`:
+Enable the integration by including it in your `astro.config.mjs` file:
 
 ```js
 import { defineConfig } from "astro/config"
@@ -24,127 +38,99 @@ export default defineConfig({
   integrations: [hyperapp()],
 })
 ```
-## Using JSX / TSX
 
-Just name your files with a '.jsx' or '.tsx' extension, and you're good to start using JSX in your components. 
+### Create a first island
 
-We use the "classic" transform mode for JSX, meaning that children of your components will be passed as an array in the second argument of your components. *Not* as a `children` property in the first argument.
+> In Astro, an "island" is a mount-point for a client-side component is rendered.
 
-Unlike e.g. React, `key` properties are not handled intrinsically. They can only be set on regular html/svg nodes - not on components. Your components can *accept* keys as properties of course, and set the key on the html/svg node that it returns.
-
-Fragments `<>...</>` work too, but bear in mind that the main view component of a hyperapp app, or an island,
-cannot be a fragment - it must return a single element.
-
-### Note on mixing with other ui frameworks
-
-If you're using jsx for your components, and also use other frameworks that use jsx, you need to
-explicitly tell the integrations which files it should include or exclude using [picomatch](https://github.com/micromatch/picomatch#globbing-features)
-patterns.
-
-This might require you to use some naming convention or folder structure to make it possible to
-separate components from different frameworks
-
-```js
-import { defineConfig } from "astro/config"
-import hyperapp from "astrojs-hyperapp"
-import preact from "@astrojs/preact"
-
-export default defineConfig({
-  integrations: [
-    hyperapp({ include: ["**/hyperapp/*"] }), //exclude option also possible
-    preact({ include: ["**/preact/*"] }), //exclude option also possible
-  ],
-})
-```
-
-## Using Typescript/TSX
-
-Any files ending with .ts or .tsx will be processed as typescript files.
-
-In order for typescript to understand your .tsx files properly, you need to add:
-
-```js
-  "jsx": "preserve",
-  "jsxFactory": "jsx",
-  "jsxFragmentFactory": "jsxFragment"
-```
-
-to the `"compilerOptions": {...}` in your `tsconfig.json`
-
-Also, you will need to provide the jsx types to typescript by adding:
-
-```js
-/// <reference types="astrojs-hyperapp/jsx" />
-```
-
-in the `src/env.d.ts` file. If you don't already have `src/env.d.ts` file, please create one. This is the best-practice place to add types to the global environment for your source code.
-
-## Authoring islands
-
-In astrojs, an 'island' is a part of a page that is hooked up to a client-side framework
-for interactivity. Each of our islands will be activated (or "hydrated") with a call to
-Hyperapp's `app(...)` function.
-
-An island module needs to default-export a function that optionally takes some server-side
-props, and returns an object we could pass to Hyperapp's `app()` – except the `node` prop,
-which will be provided by this integration.
-
-**`/src/components/counter.jsx`**
+Make a new folder called `client` inside `src/` to keep your client-side code separate from the server-side code. In that folder, create a file `Counter.jsx`:
 
 ```jsx
-export default const serverProps => ({
-  init: serverProps.startCount || 0,
-  view: value => (
-    <div class="counter">
-      <h1>{value}</h1>
-      <button onclick={x => x - 1}>-</button>
-      <button onclick={x => x + 1}>+</button>
+
+const increment = state => ({...state, count: state.count + 1})
+
+const decrement = state => ({...state, count: state.count - 1})
+
+export default () => ({
+  init: {count: 0},
+  view: state => (
+    <div>
+      <h1>{state.count}</h1>
+      <button onclick={decrement}>-</button>
+      <button onclick={increment}>+</button>
     </div>
-  ),
-  // could also define these props:
-  // subscriptions: ...
-  // dispatch: ...
+  )
 })
+
 ```
 
-## Using islands on a page:
+### Use the island in an astro page
 
-With a island thus defined, the we can use hyperapp
-to render the component (both server side and hydrate
-client side), in our astro-components like this:
+Open up `src/pages/index.astro` and
+- add an import for the counter in the frontmatter, 
+- place the component somewhere in the body
 
-**`/src/pages/index.astro`**
-
-```jsx
+```html
 ---
-import Counter from '../components/counter.jsx'
+import Counter from '../client/Counter' //<-- add this
 ---
-<!doctype html>
-<html>
-  <head></head>
+<html lang="en">
+  <head>
+    ...
+    <title>Astro</title>
+  </head>
   <body>
-    <p> Here is the counter, starting at 5</p>
-
-    <Counter client:load startCount={5} />
-
+    <h1>Astro</h1>
+    
+    <!-- and add this: -->
+    <p>A hyperapp counter:</p>
+    <Counter client:load />
+    <!-- // -->  
   </body>
 </html>
 ```
 
-Note how the props passed in to the island in the astro-component,
-are available in the `serverProps` we defined in the counter.
+> "client:load" tells astro to mount the component as soon as the page is loaded. See https://docs.astro.build/en/reference/directives-reference/#client-directives for more info
 
-### Note: ###
+### Check it out!
 
-Currently there is a limitation with Astro, so that if you are using other UI frameworks alongside Hyperapp, that also work with .jsx files, you cannot use the `client:only` hydration directive. `client:only="hyperapp"` will give you an error saying you are missing a renderer hint. This is becase "hyperapp" is not in a particular internal hardcoded list of renderers. 
+Start Astro's dev server by opening your shell, changing directory to your Astro project, and running:
+
+```sh
+npm run dev
+```
+
+Then open up a browser to `http:localhost:4321/`. You should see your standard Astro index page, and in it you should see your counter-component rendered, and working (click the buttons to try it out!)
 
 
-## Passing static content to islands
+## Hyperapp Islands
 
-You can pass static content from astro components in to your islands,
-for example to control hiding/showing the content.
+Hyperapp islands are functions that return objects with the same properties you would pass to Hyperapp's `app({...})` call (`init`, `view`, `subscriptions`, `dispatch`) – all except the `node` property (which astro provides for us). Upon hydration, a hyperapp-instance is started on the island mount-point. Therefore a `view` is required, and you probably want an `init`, but `subscriptions` and `dispatch` are optional.
 
-**_`index.astro`_**
+### Server Props
+
+An Astro-page can send props to your island, in the first argument to your island function. For example:
+
+```jsx
+//some-page.astro
+
+<Counter client:load startCount={5} />
+
+```
+will send `{startCount: 5}` as the first argument to your island function, so you can handle adapt this particular instance to the given props:
+
+```jsx
+//Counter.jsx
+export default (serverProps) => ({
+  init: {count: serverProps.startCount},
+  view: state => ...
+})
+```
+
+### Static content
+
+You can pass static html content to you islands, from Astro pages:
+
 
 ```jsx
 ---
@@ -163,28 +149,27 @@ import ContentToggle from '../components/ContentToggle.jsx'
 </style>
 ```
 
-**_`ContentToggle.jsx`_**
+This static content is provided to the island as a Hyperapp virtual-node in the second argument:
 
 ```jsx
 export default (props, content) => ({
   init: false,
   view: showing => (
     <div style={{border: '1px black solid'}}>
-      <button onclick={showing => !showing}>
-        {showing ? 'Hide' : 'Show'}
-      </button>
       <div>
-        {showing && content}
+        <button onclick={showing => !showing}>
+          {showing ? 'Hide' : 'Show'}
+        </button>
+      <div>
+      {showing && content}
     </div>
   )
 })
 ```
 
-This is the default behavior for all content not specifically slotted. You can also
-set a html node to appear in a specific slot with the `slot` attribute. Such content
-is passed to the island in a property named as the slot:
+### Slots 
 
-**_`index.astro`_**
+Sometimes you might want to pass more than one set of static html to an island. You can do that by setting the `slot` attribute to a name you choose, on an element in the static content being passed in, that you want to distinguish from the rest: 
 
 ```jsx
 ---
@@ -198,15 +183,16 @@ import ContentToggle from '../components/ContentToggle.jsx'
   <p slot="footer">This footer text is always visible</div>
 </ContentToggle>
 <style>
-.red {
+.red {
   color: red;
 }
 </style>
 ```
 
-**_`ContentToggle.jsx`_**
+Slotted content is not included in the second `content` argument to your island, but is instead passed as a prop in the first arguement, with the same name you gave the slot.
 
 ```jsx
+//ContentToggle.jsx
 export default (props, content) => ({
   init: false,
   view: showing => (
@@ -222,55 +208,162 @@ export default (props, content) => ({
 })
 ```
 
-Slot-names need to be given as snake/kebab case (e.g `slot="kebab-case"` or `slot="snake_case"`) but
+> Slot-names need to be given as snake/kebab case (e.g `slot="kebab-case"` or `slot="snake_case"`) but
 in `.astro` files (in order to be html-compliant). But for your convenience, such names are transformed to
 camelCase (e.g. `props.kebabCase` or `props.snakeCase`) in the props passed to the island.
 
-## Sharing state between islands
 
-Since each island will be it's own instance of a hyperapp-app they will not share state.
-Astro recommends using [nanostores](https://github.com/nanostores) for sharing states, and that
-is a perfectly good option. You will just have to write your own effects/subscriptions.
+## Synchronizing Islands
 
-Another option is to use state synchronization utility shipped with this integration.
+Every island in an Astro page is ... an island, unto itself. It has its own state and doesn't know what's going on in any other island unless you build in some signalling/sharing mechanism of your own. This is true for any choice of client-side framework. 
 
-With this, you define a headless "master-app" by providing an
-`init` prop and optionally `subscriptions` and `dispatch` (for middleware). It will return
-a function which islands can use to simply provide their view-funcitons. Although they will
-be rendered as separate islands (and technically individual app-instances), their state
-will be shared.
+Astro's recommended solution to sharing state between islands is [nanostores](https://github.com/nanostores). It is a fine solution, but will (for now) require you to implement your own effects & subscriptions for interacting with nanostores.
 
-**_`island1.jsx`_**
+As a convenient alternative, this integration offers a mechanism for you to define *synchronized* islands. Islands that share the same state. 
+
+Start by definining a synchronizer, where you pass in an `init` prop, and optionally  `subscriptions` & `dispatch` props. Again, these are the same as you would pass to a Hyperapp `app({...})` call. 
 
 ```js
-import syncedIslands from 'astrojs-hyperapp/synced-islands'
-
-//define a syncer for islands 1 and 2
-export const sync = syncedIslands({
+//chat-master.js
+import makeSynchronizer from 'astrojs-hyperapp/synced-islands'
+export const chatSynchronizer = makeSynchronizer({
   init: ...          // initial states and effects
   subscriptions: ... // optional
   dispatch: ...      // optional
 })
+```
 
-// This is the same as defining a regular island,
-// but init and dispatch props are provided by
-// the island-function, to sync the state
-// with the headless master.
-export default props => sync(state => (
-  <section class="info">
-  ...
-  </section>
+Now, for every island that you want to share this state, import the synchronizer, and use it to define your island by giving it only a view (the rest of the props are provided by the synchronizer):
+
+```jsx
+//chat-messages.jsx
+import {chatSynchronizer} from './chat-master.js'
+export default props => chatSynchronizer(state => (
+  <div class="chat-messages">
+   {/* define chat-messages view here */}
+  </div>
 ))
 ```
 
-**_`island2.jsx`_**
+```jsx
+//chat-status.jsx
+import {chatSynchronizer} from './chat-master.js'
+export default props => chatSynchronizer(state => (
+  <div class="chat-status">
+   {/* define chat-status view here */}
+  </div>
+))
+```
+
+```jsx
+//chat-notifications.jsx
+import {chatSynchronizer} from './chat-master.js'
+export default props => chatSynchronizer(state => (
+  <div class="chat-notifications">
+   {/* define chat-notifications view here */}
+  </div>
+))
+```
+
+Each island will technically have it's own hyperapp-instance running. But they are wired up so as to immediately synchronize their state between them. Therefore, they can also share and reuse the same actions.
+
+## Important Notes and Caveats
+
+### JSX children
+
+When you pass children to a component, like:
+
+```jsx
+<MyComponent>
+  <p>foo</p>
+  <p>bar</p>
+</MyComponent>
+```
+
+they will arrive as an array of virtual nodes in the *second* argument to the component.
+
+```jsx
+const MyComponent = (props, children) => {
+  //children will be: [<p>foo</p>, <p>bar</p>]
+}
+```
+
+It's ok to put this array of children among other children, because the jsx transform will flatten the child-list:
+
+```jsx
+const MyComponent = (props, children) => (
+  <div>
+    <h1>Header</h1>
+    {children} {/* <--- this is fine */}
+  </div>
+)
+```
+
+
+### Using TSX 
+
+In order to use TSX (type-aware JSX), you will need to add the following lines to your `tsconfig.json` file under `"compilerOptions": { ... }`:
+
+```
+"jsx": "preserve",
+"jsxFactory": "jsx",
+"jsxFragmentFactory": "jsxFragment"
+```
+
+You should also create a `src/env.d.ts` file - a recommended place to put global type definitions for your code - and in it, add the line:
+
+```
+/// <reference types="astrojs-hyperapp/jsx" />
+```
+
+### Limiting Scope of the integration
+
+By default, this integration will affect every .js, .ts, .jsx and .tsx file in your project, which might cause undesired effects. You can limit what files this integration processes, by passing `include` and/or `exclude` options to the integration in `astro.config.mjs`.
 
 ```js
-import {sync} from './island1.jsx'
+import { defineConfig } from "astro/config"
+import hyperapp from "astrojs-hyperapp"
 
-const DoSomething = state => ... // state will be as defined by master
-
-export default props => sync(state => (
-  <button onclick={DoSomething}>...</button>
-))
+export default defineConfig({
+  integrations: [hyperapp({
+    include?: String | RegExp | Array[...String|RegExp],
+    exclude?: String | RegExp | Array[...String|RegExp]
+  })],
+})
 ```
+
+Where strings are taken as [picomatch](https://github.com/micromatch/picomatch#globbing-features)
+patterns.
+
+### Mixing client-frameworks
+
+If you want to use Hyperapp alongside another client-side UI-framework that also uses .jsx, like React, you will need to separate their integration scope using the include/exclude options mentioned above. 
+
+A recommended practice is to keep components for different frameworks in named folders, for example: `src/client/hyperapp/` for everything using Hyperapp, and `src/client/react/` for everything using React. Then `astro.config.mjs` could look like this:
+
+```js
+import { defineConfig } from "astro/config"
+import hyperapp from "astrojs-hyperapp"
+import react from '@astrojs/react'
+export default defineConfig({
+  integrations: [
+    hyperapp({include: "**/hyperapp/*"}),
+    react({include: "**/react/*"}),
+  ],
+})
+```
+
+Also, since we need to set our own compilerOptions for jsx in `tsconfig.json`, which breaks react's jsx processing, you will need to add the following pragma at the top of all React components:
+
+```
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
+```
+
+### `client:only` issue
+
+Due to a current limitation in astro, if you are using another client-side framework like React alongside Hyperapp, the `client:only` directive is unusable for Hyperapp islands. 
+
+If you try, you will get an error about a missing renderer-hint. Even if you specify `client:only="hyperapp"`. This is due to the fact that "hyperapp" is not listed in the internal, hard-coded list of 'sanctioned' renderers.
+
+
