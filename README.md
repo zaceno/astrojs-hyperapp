@@ -11,10 +11,8 @@
 - **Hot-Module-Reloading** – While developing, see the changes to your components reflected live on save - *without losing their internal state*
 - **Synchronized Components** – Have multiple, separate Hyperapp components spread out over your otherwise static site – *sharing the same state*, thanks to the `synchronized-islands` utility provided by this integration.
 
-Have a look at a demo at https://stackblitz.com/github/zaceno/astrojs-hyperapp-demo, or read on to try for yourself
+Have a look at a demo at https://codesandbox.io/p/github/zaceno/astrojs-hyperapp-demo, or read on to try for yourself
 
-* auto-gen TOC:
-{:toc}
 
 ## Get Started
 
