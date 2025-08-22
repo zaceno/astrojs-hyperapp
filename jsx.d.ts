@@ -2,7 +2,7 @@ import type { Props, MaybeVNode, ElementVNode } from "hyperapp"
 
 type Component<S, P> = (
   props: P,
-  children?: MaybeVNode<S>[],
+  children: MaybeVNode<S>[],
 ) => MaybeVNode<S> | MaybeVNode<S>[]
 
 type _JSXChild<S> = string | number | MaybeVNode<S>
@@ -28,7 +28,7 @@ export declare function jsxFragment<S>(
 declare global {
   namespace JSX {
     /** Result of a JSX expression. Components may return arrays. */
-    type Element = MaybeVNode<any> | MaybeVNode<any>[]
+    type Element =  MaybeVNode<any> | MaybeVNode<any>[] 
 
     /** What you can put in the `<X />` position */
     type ElementType = string | Component<any, any>
