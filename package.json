@@ -3,6 +3,7 @@
   "version": "3.0.7",
   "type": "module",
   "description": "Hyperapp integration for astro.build",
+  "keywords": "withastro renderer",
   "main": "./index.js",
   "types": "./index.d.ts",
   "sideEffects": false,
