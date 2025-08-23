@@ -1,9 +1,12 @@
 {
   "name": "astrojs-hyperapp",
-  "version": "3.0.7",
+  "version": "3.0.8",
   "type": "module",
   "description": "Hyperapp integration for astro.build",
-  "keywords": "withastro renderer",
+  "keywords": [
+    "astro",
+    "hyperapp"
+  ],
   "main": "./index.js",
   "types": "./index.d.ts",
   "sideEffects": false,
@@ -54,10 +57,6 @@
     "type": "git",
     "url": "git+https://github.com/zaceno/astrojs-hyperapp.git"
   },
-  "keywords": [
-    "astro",
-    "hyperapp"
-  ],
   "author": "Zacharias Enochsson",
   "license": "ISC",
   "bugs": {
