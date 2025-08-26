@@ -5,7 +5,9 @@
   "description": "Hyperapp integration for astro.build",
   "keywords": [
     "astro",
-    "hyperapp"
+    "hyperapp",
+    "withastro",
+    "renderer"
   ],
   "main": "./index.js",
   "types": "./index.d.ts",
