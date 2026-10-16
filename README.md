@@ -1,12 +1,8 @@
-
 # Astro-Hyperapp Integration
 
-
-
-> Static/server rendered Hyperapp components with Astro. JSX/TSX-support, Hot-Module-Reloading, Server-Side-Rendering & Synchronized Components
+> Static/server rendered Hyperapp components with Astro. JSX/TSX support, Hot-Module-Reloading, Server-Side-Rendering & Synchronized Components.
 
 [Astro](https://astro.build) is a static-site-generator – it lets you generate a website as static files from various content-sources. It can also run as a server, rendering your html/css at runtime. Unlike similar tools, Astro is agnostic about the client side, allowing any frontend framework (or none!) by way of _integrations_.
-
 
 [Hyperapp](https://github.com/jorgebucaran/hyperapp) is an extremely _tiny_, _fast_ and _simple_ client-side UI framework. With this integration, you get to use Hyperapp in your Astro site, along with:
 
@@ -21,13 +17,17 @@ Have a look at a demo at https://codesandbox.io/p/github/zaceno/astrojs-hyperapp
 
 If you don't already have an astro project, set one up following the instructions at: https://docs.astro.build/en/install-and-setup/
 
+This integration targets Astro 7, Hyperapp 2 and Vite 8, and needs Node 22.20 or newer.
+
 ### Install and enable `astrojs-hyperapp`
 
 Open a shell and change directory to the root of your astro project, then run:
 
 ```sh
-> npm install hyperapp astrojs-hyperapp
+> npm install hyperapp astrojs-hyperapp vite-plugin-hyperapp
 ```
+
+`vite-plugin-hyperapp` provides the JSX/TSX runtime and types. Install it directly in your project so your own source files can resolve it. You only need it if you write your views in JSX/TSX.
 
 Enable the integration by including it in your `astro.config.mjs` file:
 
@@ -42,7 +42,7 @@ export default defineConfig({
 
 ### Create a first island
 
-> In Astro, an "island" is a mount-point for a client-side component is rendered.
+> In Astro, an "island" is a mount-point where a client-side component is rendered.
 
 Make a new folder called `client` inside `src/` to keep your client-side code separate from the server-side code. In that folder, create a file `Counter.jsx`:
 
@@ -70,7 +70,7 @@ Open up `src/pages/index.astro` and
 - add an import for the counter in the frontmatter,
 - place the component somewhere in the body
 
-```html
+```astro
 ---
 import Counter from '../client/Counter' //<-- add this
 ---
@@ -108,17 +108,29 @@ Then open up a browser to `http://localhost:4321/`. You should see your standard
 
 Hyperapp islands are functions that return objects with the same properties you would pass to Hyperapp's `app({...})` call (`init`, `view`, `subscriptions`, `dispatch`) – all except the `node` property (which astro provides for us). Upon hydration, a hyperapp-instance is started on the island mount-point. Therefore a `view` is required, and you probably want an `init`, but `subscriptions` and `dispatch` are optional.
 
+### Hydration
+
+Astro's client directives all work with Hyperapp islands:
+
+- `client:load` – hydrate as soon as the page loads
+- `client:idle` – hydrate once the browser is idle
+- `client:visible` – hydrate when the island scrolls into view
+- `client:media` – hydrate when a media query matches
+- `client:only="hyperapp"` – skip server rendering and render in the browser only
+
+With no client directive the island is rendered to static html on the server and never hydrated. A server-rendered island reuses its real root element during hydration, so the root does not have to be a `div`.
+
 ### Server Props
 
 An Astro-page can send props to your island, in the first argument to your island function. For example:
 
-```jsx
+```astro
 //some-page.astro
 
 <Counter client:load startCount={5} />
 ```
 
-will send `{startCount: 5}` as the first argument to your island function, so you can handle adapt this particular instance to the given props:
+will send `{startCount: 5}` as the first argument to your island function, so you can adapt this particular instance to the given props:
 
 ```jsx
 //Counter.jsx
@@ -130,16 +142,16 @@ export default (serverProps) => ({
 
 ### Static content
 
-You can pass static html content to you islands, from Astro pages:
+You can pass static html content to your islands, from Astro pages:
 
-```jsx
+```astro
 ---
 import ContentToggle from '../components/ContentToggle.jsx'
 ---
 <p> Click to reveal contents:</p>
 <ContentToggle client:load>
   <p class="red">
-    This text his hidden by default. And red.
+    This text is hidden by default. And red.
   </p>
 </ContentToggle>
 <style>
@@ -172,14 +184,14 @@ export default (_, content) => ({
 
 Sometimes you might want to pass more than one set of static html to an island. You can do that by setting the `slot` attribute to a name you choose, on an element in the static content being passed in, that you want to distinguish from the rest:
 
-```jsx
+```astro
 ---
 import ContentToggle from '../components/ContentToggle.jsx'
 ---
 <p> Click to reveal contents:</p>
 <ContentToggle client:load>
   <p class="red">
-    This text his hidden by default. And red.
+    This text is hidden by default. And red.
   </p>
   <p slot="footer">
     This footer text is always visible
@@ -206,6 +218,7 @@ export default (props, content) => ({
       <div>
         {showing && content}
         {props.footer}
+      </div>
     </div>
   )
 })
@@ -214,7 +227,8 @@ export default (props, content) => ({
 
 > Slot-names need to be given as snake/kebab case (e.g `slot="kebab-case"` or `slot="snake_case"`)
 > in `.astro` files, in order to be html-compliant. But for your convenience, they are transformed to
-> camelCase (e.g. `props.kebabCase` or `props.snakeCase`) in the props passed to the island.
+> camelCase (e.g. `props.kebabCase` or `props.snakeCase`) in the props passed to the island. An
+> explicit prop with the same name takes precedence over a slot.
 
 ## Synchronizing Islands
 
@@ -267,13 +281,28 @@ export default props =>
   ))
 ```
 
-Each island will technically have it's own hyperapp-instance running. But they are wired up so as to immediately synchronize their state between them. Therefore, they can also share and reuse the same actions.
+Each island will technically have its own hyperapp-instance running. But they are wired up so as to immediately synchronize their state between them. Therefore, they can also share and reuse the same actions.
+
+A few details worth knowing:
+
+- **Server rendering never shares state.** Each render computes its own initial state from `init`, so nothing leaks between requests or users.
+- **In the browser, state is shared within one module instance** – one page, one visit. It is not shared across tabs or users.
+- **Subscriptions run once per synchronizer**, and stop when the last participating island unmounts. If all islands go away and later come back (for example, after client-side navigation), subscriptions start again from the initial state.
 
 ## Important Notes and Caveats
 
 ### JSX children
 
-When you pass children to a component, like:
+Hyperapp JSX uses the automatic runtime, so a JSX component receives **one props object**, with its children on `props.children`:
+
+```jsx
+const MyComponent = ({ children }) => (
+  <div>
+    <h1>Header</h1>
+    {children}
+  </div>
+)
+```
 
 ```jsx
 <MyComponent>
@@ -282,18 +311,10 @@ When you pass children to a component, like:
 </MyComponent>
 ```
 
-they will arrive as an array of virtual nodes in the _second_ argument to the component.
+`props.children` is a single virtual node when there is one child, and an array when there are several. It is fine to interpolate it among other nodes: the runtime flattens nested arrays and fragments and drops `null`, `undefined` and booleans.
 
 ```jsx
-const MyComponent = (props, children) => {
-  //children will be: [<p>foo</p>, <p>bar</p>]
-}
-```
-
-It's ok to put this array of children among other children, because the jsx transform will flatten the child-list:
-
-```jsx
-const MyComponent = (props, children) => (
+const MyComponent = ({ children }) => (
   <div>
     <h1>Header</h1>
     {children} {/* <--- this is fine */}
@@ -301,25 +322,58 @@ const MyComponent = (props, children) => (
 )
 ```
 
-### Using TSX
+> Note the difference from an **island factory**. An island is a plain function that Astro calls with `(serverProps, content)`, so the default slot is the _second argument_ (see *Static content*), while JSX components always take a single props object.
 
-In order to use TSX (type-aware JSX), you will need to add the following lines to your `tsconfig.json` file under `"compilerOptions": { ... }`:
+### Using JSX and TSX
 
+The integration compiles Hyperapp JSX/TSX with the automatic runtime from `vite-plugin-hyperapp/jsx`. Plain `.jsx` files work as soon as the integration is enabled and `vite-plugin-hyperapp` is installed.
+
+For TypeScript, TypeScript wants a single **primary** JSX import source in your `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "jsxImportSource": "vite-plugin-hyperapp/jsx"
+  }
+}
 ```
-"jsx": "preserve",
-"jsxFactory": "jsx",
-"jsxFragmentFactory": "jsxFragment"
+
+If your project uses another framework as the primary JSX source (React, for example), keep that as primary and add a pragma to the top of each Hyperapp `.tsx` file so TypeScript and Vite agree:
+
+```tsx
+/** @jsxImportSource vite-plugin-hyperapp/jsx */
 ```
 
-You should also create a `src/env.d.ts` file - a recommended place to put global type definitions for your code - and in it, add the line:
+Conversely, if Hyperapp is primary, files for the other framework need their own leading pragma, such as:
 
+```tsx
+/** @jsxImportSource react */
 ```
-/// <reference types="astrojs-hyperapp/jsx" />
+
+This applies to `.tsx` files for TypeScript, and it may also be needed in `.jsx` files for Vite's dev transform: the `include`/`exclude` filters decide which files the integration processes, but they do not override a primary `jsxImportSource` in the Vite dev transform. See *Mixing client-frameworks* below.
+
+### Typing children
+
+For a component that accepts children, type them with the `Child` type exported by the JSX runtime:
+
+```tsx
+import type { Child } from "vite-plugin-hyperapp/jsx/jsx-runtime"
+
+function Panel({ title, children }: { title: string; children?: Child }) {
+  return (
+    <section>
+      <h2>{title}</h2>
+      {children}
+    </section>
+  )
+}
 ```
 
-### Limiting Scope of the integration
+`Child` covers everything a JSX expression can hold – elements, strings, numbers, booleans, `null`/`undefined`, and (nested) arrays of those.
 
-By default, this integration will affect every .js, .ts, .jsx and .tsx file in your project, which might cause undesired effects. You can limit what files this integration processes, by passing `include` and/or `exclude` options to the integration in `astro.config.mjs`.
+### Limiting the scope of the integration
+
+By default, this integration will affect every `.js`, `.jsx`, `.ts` and `.tsx` file in your project, which might cause undesired effects. You can limit what files this integration processes, by passing `include` and/or `exclude` options to the integration in `astro.config.mjs`:
 
 ```js
 import { defineConfig } from "astro/config"
@@ -327,18 +381,22 @@ import hyperapp from "astrojs-hyperapp"
 
 export default defineConfig({
   integrations: [hyperapp({
-    include?: String | RegExp | Array[...String|RegExp],
-    exclude?: String | RegExp | Array[...String|RegExp]
+    include: "src/components/hyperapp/**/*.{js,jsx,ts,tsx}",
+    exclude: "**/*.test.{js,jsx,ts,tsx}",
   })],
 })
 ```
 
-Where strings are taken as [picomatch](https://github.com/micromatch/picomatch#globbing-features)
-patterns.
+Both options accept a string glob (matched with [picomatch](https://github.com/micromatch/picomatch#globbing-features)), a `RegExp`, or an array of either – the same filter-pattern type Vite plugins use.
+
+The same filters select the modules the integration owns for **both** JSX/TSX compilation and island Hot-Module-Reloading – but they apply slightly differently:
+
+- JSX/TSX compilation only ever applies to selected `.jsx`/`.tsx` files.
+- Island HMR applies in development only, to selected modules that are entry points of the client module graph. `hmr` defaults to `true`; pass `hmr: false` to turn island HMR off while still compiling JSX/TSX.
 
 ### Mixing client-frameworks
 
-If you want to use Hyperapp alongside another client-side UI-framework that also uses .jsx, like React, you will need to separate their integration scope using the include/exclude options mentioned above.
+If you want to use Hyperapp alongside another client-side UI-framework that also uses `.jsx`/`.tsx`, like React, you will need to separate their integration scope using the `include`/`exclude` options mentioned above.
 
 A recommended practice is to keep components for different frameworks in named folders, for example: `src/client/hyperapp/` for everything using Hyperapp, and `src/client/react/` for everything using React. Then `astro.config.mjs` could look like this:
 
@@ -346,23 +404,61 @@ A recommended practice is to keep components for different frameworks in named f
 import { defineConfig } from "astro/config"
 import hyperapp from "astrojs-hyperapp"
 import react from "@astrojs/react"
+
 export default defineConfig({
   integrations: [
-    hyperapp({ include: "**/hyperapp/*" }),
-    react({ include: "**/react/*" }),
+    hyperapp({ include: "src/client/hyperapp/**/*.{js,jsx,ts,tsx}" }),
+    react({ include: "src/client/react/**/*.{jsx,tsx}" }),
   ],
 })
 ```
 
-Also, since we need to set our own compilerOptions for jsx in `tsconfig.json`, which breaks react's jsx processing, you will need to add the following pragma at the top of all React components:
+**Scoping is required, not optional.** The integration cannot tell which module belongs to which framework, so an unscoped Hyperapp setup can interfere with the other framework's transforms and HMR. See Astro's [guide to combining multiple JSX frameworks](https://docs.astro.build/en/guides/integrations-guide/react/#combining-multiple-jsx-frameworks).
 
+Also, because a project has a single primary `jsxImportSource`, files for the *other* framework may additionally need a leading pragma (see *Using JSX and TSX* above) – for `.jsx` files as well as `.tsx`.
+
+Hyperapp islands have been verified running side by side with React and Vue islands, including `client:only="hyperapp"`.
+
+### Hot-Module-Reloading requires direct imports
+
+Import each island factory **directly from its own module** in your `.astro` files. Editing that module (or a module it imports) hot-reloads the running island without losing its state.
+
+Do **not** import the same island through a barrel file or re-export in some pages and directly in others. Depending on Vite's module-graph history, only some of those islands will update and the rest will stay stale. This is a documented limitation, so import island factories directly.
+
+### Views must return a single element
+
+A view must return **one top-level element**, not a fragment:
+
+```jsx
+// good – a single root element
+export default () => ({
+  init: 0,
+  view: count => <main>{count}</main>,
+})
+
+// not allowed – the top-level node is a fragment
+export default () => ({
+  init: 0,
+  view: count => <><h1>{count}</h1><p>Hello</p></>,
+})
 ```
-/** @jsxRuntime automatic */
-/** @jsxImportSource react */
+
+Fragments *inside* the root element are fine. In development, the integration throws a descriptive error for a top-level fragment (Astro shows its server error page for a `client:load` island; `client:only` reports the error in the browser console). In production the dev guard is inactive, but the server renderer still rejects an invalid root.
+
+### Browser-only effects during server rendering
+
+Astro processes islands with Vite on the server as well as in the browser, and the SSR helper from `vite-plugin-hyperapp/ssr` computes your initial state by running Hyperapp's `app({ init })` on the server. **Synchronous effects in `init` therefore run during server rendering too.** Guard anything that touches `document`, `window`, or other browser-only APIs *before you schedule it*:
+
+```js
+init: () => [{ name: "" }, !import.meta.env.SSR && focusInput]
 ```
 
-### `client:only` issue
+For the same reason, avoid browser APIs in your component factories and views during rendering. `import.meta.env.SSR` tells you where the code is running (server vs browser); it is not a test of whether your Astro output is static or server-rendered. Keep the initial server and client state identical so hydration matches. (Also note that the SSR helper does not start subscriptions, but `init` effects that dispatch actions can run those actions on the server.)
 
-Due to a current limitation in astro, if you are using another client-side framework like React alongside Hyperapp, the `client:only` directive is unusable for Hyperapp islands.
+### Slot content is inserted as raw html
 
-If you try, you will get an error about a missing renderer-hint. Even if you specify `client:only="hyperapp"`. This is due to the fact that "hyperapp" is not listed in the internal, hard-coded list of 'sanctioned' renderers.
+Default content and named slots are inserted into the island as raw `innerHTML`. Only pass trusted (or sanitized) html into an island, and don't rely on pre-hydration DOM state or event listeners inside slotted content surviving hydration.
+
+### Nested islands are not supported
+
+**Nested Astro islands are not supported.** Don't place an independently hydrated component (another Hyperapp island, or a React/Vue island) inside the content or slots of a Hyperapp island: Hyperapp controls the whole subtree and will replace that markup. This is different from ordinary composition of Hyperapp VDOM *within* a single island, which works normally.
