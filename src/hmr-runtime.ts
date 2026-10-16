@@ -7,8 +7,22 @@ type Instance = {
   remount: (component: IslandFactory, state: unknown) => IslandDispatch
 }
 
-const instances = new Map<string, Set<Instance>>()
-const updatedModules = new Map<string, Record<string, unknown>>()
+type Store = {
+  instances: Map<string, Set<Instance>>
+  updatedModules: Map<string, Record<string, unknown>>
+}
+
+// Vite can serve this module under two different URLs: the client renderer's
+// internal import lives inside node_modules and gets an optimizer `?v=` query
+// appended, while the HMR boundary injected into project modules imports the
+// bare path. The browser then evaluates the file twice, so a module-level
+// registry would be split in two and island updates would silently miss. Keep
+// the state on a shared global so every instance refers to the same registry.
+const store = ((globalThis as typeof globalThis & { __astroHyperappHmr?: Store }).__astroHyperappHmr ??= {
+  instances: new Map(),
+  updatedModules: new Map(),
+})
+const { instances, updatedModules } = store
 
 const key = (url: string, exported: string | null) => JSON.stringify([new URL(url, location.href).pathname, exported || "default"])
 const getExport = (module: Record<string, unknown>, exported: string): unknown => exported.split(".").reduce<unknown>((value, part) =>
