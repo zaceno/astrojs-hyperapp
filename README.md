@@ -17,14 +17,14 @@ Have a look at a demo at https://codesandbox.io/p/github/zaceno/astrojs-hyperapp
 
 If you don't already have an astro project, set one up following the instructions at: https://docs.astro.build/en/install-and-setup/
 
-This integration targets Astro 7, Hyperapp 2 and Vite 8, and needs Node 22.20 or newer.
+This integration targets Astro 7 and needs Node 22.20 or newer.
 
 ### Install and enable `astrojs-hyperapp`
 
 Open a shell and change directory to the root of your astro project, then run:
 
 ```sh
-> npm install hyperapp astrojs-hyperapp vite-plugin-hyperapp
+> npm install astrojs-hyperapp
 ```
 
 `vite-plugin-hyperapp` provides the JSX/TSX runtime and types. Install it directly in your project so your own source files can resolve it. You only need it if you write your views in JSX/TSX.
@@ -118,7 +118,7 @@ Astro's client directives all work with Hyperapp islands:
 - `client:media` – hydrate when a media query matches
 - `client:only="hyperapp"` – skip server rendering and render in the browser only
 
-With no client directive the island is rendered to static html on the server and never hydrated. A server-rendered island reuses its real root element during hydration, so the root does not have to be a `div`.
+With no client directive the island is rendered to static html on the server and never hydrated. 
 
 ### Server Props
 
@@ -179,6 +179,7 @@ export default (_, content) => ({
 })
 ```
 
+You can even use slots to nest islands, as described in Astro's docs here: [Nesting framework components](https://docs.astro.build/en/guides/framework-components/#nesting-framework-components). With hyperapp, that sort of architecture becomes much more useful with _synchronized islands_ as described below.
 
 ### Slots
 
