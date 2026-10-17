@@ -458,7 +458,3 @@ For the same reason, avoid browser APIs in your component factories and views du
 ### Slot content is inserted as raw html
 
 Default content and named slots are inserted into the island as raw `innerHTML`. Only pass trusted (or sanitized) html into an island, and don't rely on pre-hydration DOM state or event listeners inside slotted content surviving hydration.
-
-### Nested islands are not supported
-
-**Nested Astro islands are not supported.** Don't place an independently hydrated component (another Hyperapp island, or a React/Vue island) inside the content or slots of a Hyperapp island: Hyperapp controls the whole subtree and will replace that markup. This is different from ordinary composition of Hyperapp VDOM *within* a single island, which works normally.
